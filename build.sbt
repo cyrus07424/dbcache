@@ -44,7 +44,8 @@ lazy val root = (project in file("."))
   .settings(commonSettings)
   .settings(Publish.nonPublishSettings)
   .settings(
-    name := "dbcache"
+    name := "dbcache",
+    crossScalaVersions := Nil
   )
   .aggregate(core, mysql, postgresql, play, example, examplePlay)
 
