@@ -16,8 +16,8 @@ lazy val commonSettings = Seq(
   organization := "com.github.tototoshi",
   scalacOptions ++= Seq("-deprecation"),
   scalaVersion := "2.13.15",
-  crossScalaVersions := Seq("2.13.15", "3.3.4"),
-  version := "1.0.0"
+  crossScalaVersions := Seq("2.12.20", "2.13.15", "3.3.4"),
+  version := sys.env.getOrElse("RELEASE_VERSION", "1.0.0")
 )
 
 lazy val playScala3workaround = Def.settings(
@@ -80,9 +80,15 @@ lazy val play = (project in file("play"))
   .settings(commonSettings)
   .settings(Publish.settings)
   .settings(
-    name := "dbcache-play",
+    name := (if (scalaBinaryVersion.value == "2.12") "dbcache-play26" else "dbcache-play"),
+    Compile / unmanagedSourceDirectories += baseDirectory.value / "src/main" /
+      (if (scalaBinaryVersion.value == "2.12") "scala-akka" else "scala-pekko"),
     libraryDependencies ++= testDependencies ++ Seq(
-      cacheApi
+      if (scalaBinaryVersion.value == "2.12") {
+        "com.typesafe.play" %% "play-cache" % "2.6.25"
+      } else {
+        cacheApi
+      }
     ),
     playScala3workaround,
 ).dependsOn(core)
@@ -92,6 +98,7 @@ lazy val example = (project in file("example"))
   .settings(Publish.nonPublishSettings)
   .settings(
     name := "dbcache-example",
+    crossScalaVersions := Seq("2.13.15", "3.3.4"),
     libraryDependencies ++= testDependencies ++ Seq(
       mysqlDependency,
       postgresqlDependency
@@ -104,6 +111,7 @@ lazy val examplePlay = (project in file("example-play"))
   .settings(Publish.nonPublishSettings)
   .settings(
     name := "dbcache-example-play",
+    crossScalaVersions := Seq("2.13.15", "3.3.4"),
     libraryDependencies ++= Seq(
       guice,
       mysqlDependency,

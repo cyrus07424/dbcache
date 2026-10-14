@@ -6,6 +6,23 @@ RDB as a cache storage
 
 ## Install
 
+Artifacts are published to GitHub Packages. Add the resolver and credentials to
+your application's `build.sbt` (authentication is required even for public packages):
+
+```scala
+resolvers += "dbcache GitHub Packages" at "https://maven.pkg.github.com/cyrus07424/dbcache"
+credentials += Credentials(
+  "GitHub Package Registry",
+  "maven.pkg.github.com",
+  sys.env("GITHUB_ACTOR"),
+  sys.env("GITHUB_TOKEN")
+)
+```
+
+For local installation, set `GITHUB_ACTOR` to your GitHub username and
+`GITHUB_TOKEN` to a personal access token (classic) with `read:packages` permission
+and access to this repository's packages. Do not commit the token.
+
 ```scala
 libraryDependencies += "com.github.tototoshi" %% "dbcache-mysql" % "1.0.0"
 
@@ -114,6 +131,22 @@ Tue Apr 26 22:26:57 JST 2016: None
 |0.5.0               |2.9.x       |2.13/3.3     |
 |0.4.0               |2.8.x       |2.12/2.13    |
 
+For Play **2.6**, use the separate `dbcache-play26` artifact (Play 2.6.25,
+Scala **2.12**). The core, MySQL, and PostgreSQL artifacts also support Scala 2.12.
+Do not include `dbcache-play` in a Play 2.6 application: it targets Play 3 and Pekko,
+whereas `dbcache-play26` uses Akka. Both expose the same
+`com.github.tototoshi.dbcache.play` API.
+
+```scala
+libraryDependencies ++= Seq(
+  "com.github.tototoshi" %% "dbcache-play26" % "1.0.0",
+  "com.github.tototoshi" %% "dbcache-mysql" % "1.0.0"
+)
+```
+
+Play 2.6 is end-of-life; this compatibility artifact does not provide security
+updates for the framework itself.
+
 
 Add dbcache-play to dependencies.
 
@@ -154,3 +187,15 @@ Disable EhCache which is the default cache backend of Play.
 play.modules.disabled += "play.api.cache.ehcache.EhCacheModule"
 ```
 
+## Publishing
+
+Pushing a version tag such as `v1.0.1` runs the GitHub Actions publishing workflow.
+It runs `sbt +test` with MySQL and PostgreSQL, then publishes all library artifacts
+to the current repository's GitHub Packages registry with `sbt +publish`.
+The tag without its leading `v` becomes the artifact version; use a new version
+for each release. Root and example projects are not published.
+
+Publishing uses the workflow's `GITHUB_TOKEN` with `packages:write`; no personal
+access token is needed for releases. Ensure repository/organization settings allow
+the workflow to write packages. In another repository's Actions workflow, grant
+that repository access to the packages and use a token with `packages:read`.

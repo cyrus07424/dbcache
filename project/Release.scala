@@ -43,15 +43,17 @@ object Publish {
       </developer>
     </developers>
 
-  private def _publishTo(version: String) = {
-      val nexus = "https://oss.sonatype.org/"
-      if (version.trim.endsWith("SNAPSHOT")) Some("snapshots" at nexus + "content/repositories/snapshots")
-      else Some("releases" at nexus + "service/local/staging/deploy/maven2")
-  }
+  private val repository = sys.env.getOrElse("GITHUB_REPOSITORY", "cyrus07424/dbcache")
+
+  private val githubPackages = Some("GitHub Packages" at s"https://maven.pkg.github.com/$repository")
 
   val settings = Seq(
     publishMavenStyle := true,
-    publishTo := _publishTo(version.value),
+    publishTo := githubPackages,
+    credentials ++= (for {
+      user <- sys.env.get("GITHUB_ACTOR").toSeq
+      token <- sys.env.get("GITHUB_TOKEN").toSeq
+    } yield Credentials("GitHub Package Registry", "maven.pkg.github.com", user, token)),
     Test / publishArtifact := false,
     pomExtra := _pomExtra
   )
@@ -59,7 +61,8 @@ object Publish {
   val nonPublishSettings = Seq(
     publishArtifact := false,
     publish := {},
-    publishTo := _publishTo(version.value),
+    publish / skip := true,
+    publishTo := githubPackages,
     publishLocal := {}
   )
 
